@@ -108,3 +108,10 @@ button:hover {
 .empty {
   color: #6b7280;
 }
+
+.error {
+  margin-top: 15px;
+  color: #dc2626;
+}
+
+

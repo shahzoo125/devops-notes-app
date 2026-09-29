@@ -1,16 +1,29 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "";
+
 function App() {
   const [notes, setNotes] = useState([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [error, setError] = useState("");
 
-  const fetchNotes = () => {
-    fetch("http://localhost:5000/api/notes")
-      .then((response) => response.json())
-      .then((data) => setNotes(data))
-      .catch((error) => console.error("Error fetching notes:", error));
+  const fetchNotes = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/notes`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch notes");
+      }
+
+      const data = await response.json();
+      setNotes(data);
+      setError("");
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+      setError("Unable to load notes.");
+    }
   };
 
   useEffect(() => {
@@ -21,28 +34,34 @@ function App() {
     event.preventDefault();
 
     if (!title.trim() || !content.trim()) {
+      setError("Title and content are required.");
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/notes", {
+      const response = await fetch(`${API_URL}/api/notes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title,
-          content,
+          title: title.trim(),
+          content: content.trim(),
         }),
       });
 
-      if (response.ok) {
-        setTitle("");
-        setContent("");
-        fetchNotes();
+      if (!response.ok) {
+        throw new Error("Failed to create note");
       }
+
+      setTitle("");
+      setContent("");
+      setError("");
+
+      await fetchNotes();
     } catch (error) {
       console.error("Error adding note:", error);
+      setError("Unable to create note.");
     }
   };
 
@@ -74,6 +93,8 @@ function App() {
 
             <button type="submit">Add Note</button>
           </form>
+
+          {error && <p className="error">{error}</p>}
         </section>
 
         <section className="notes-section">
